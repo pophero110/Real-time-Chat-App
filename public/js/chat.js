@@ -1,8 +1,5 @@
+import autoScroll from "/utils/autoScroll.js";
 const socket = io();
-
-// socket.on('countUpdate', (count) => {
-//     console.log('the count has been updated', count)
-// })
 
 //elemenet
 const $messageForm = document.querySelector("#form");
@@ -10,44 +7,22 @@ const $messageFormInput = document.querySelector("input");
 const $messageFormButton = document.querySelector("button");
 const $messages = document.querySelector("#messages");
 const $sendLocationButton = document.querySelector("#send_location");
-const $locaitonLink = document.querySelector("a");
 const $sidebar = document.querySelector("#sidebar");
 //template
 const messageTemplate = document.querySelector("#message-template").innerHTML;
 const locationTemplate = document.querySelector("#location-template").innerHTML;
 const sidebarTemplate = document.querySelector("#sidebar-template").innerHTML;
-//Option
+//Options
 const { username, room } = Qs.parse(location.search, {
   ignoreQueryPrefix: true,
 });
 
-const autoScroll = () => {
-  //New message element
-  const $newMessage = $messages.lastElementChild;
-
-  //Height of the new message
-  const newMessageStyle = getComputedStyle($newMessage);
-  const newMessageMargin = parseInt(newMessageStyle.marginBottom);
-  const newMessasgeHeight = $newMessage.offsetHeight + newMessageMargin;
-
-  //Visable height
-  const visableHeight = $messages.offsetHeight;
-
-  //Height of messages content, also the height of scrollbar
-  const contentHeight = $messages.scrollHeight;
-
-  //How far have I scrolled? or the scrollBottom
-  //+1 for mathfloor
-  const scrollOffset = $messages.scrollTop + visableHeight + 1
-
-  if (contentHeight - newMessasgeHeight <= scrollOffset) {
-    $messages.scrollTop = contentHeight;
-    console.log("scrolled", $messages.scrollTop, contentHeight);
-  } else {
-    console.log("not scrolled", contentHeight, newMessasgeHeight, scrollOffset);
+socket.emit("join", { username, room }, (error) => {
+  if (error) {
+    alert(error);
+    location.href = "/";
   }
-  
-};
+});
 
 socket.on("message", (message) => {
   const html = Mustache.render(messageTemplate, {
@@ -56,17 +31,18 @@ socket.on("message", (message) => {
     createdAt: moment(message.createdAt).format("h:mm A"),
   });
   $messages.insertAdjacentHTML("beforeend", html);
-  autoScroll();
+  autoScroll($messages);
 });
-socket.on("locationMessage", (location) => {
+socket.on("locationMessage", (locationMessage) => {
+  console.log(location);
   const html = Mustache.render(locationTemplate, {
-    username: message.username,
-    url: location.url,
-    createdAt: moment(location.createdAt).format("h:mm A"),
+    username: locationMessage.username,
+    url: locationMessage.url,
+    createdAt: moment(locationMessage.createdAt).format("h:mm A"),
   });
 
   $messages.insertAdjacentHTML("beforeend", html);
-  autoScroll();
+  autoScroll($messages);
 });
 
 socket.on("roomData", ({ room, users }) => {
@@ -116,9 +92,3 @@ $sendLocationButton.addEventListener("click", () => {
   });
 });
 
-socket.emit("join", { username, room }, (error) => {
-  if (error) {
-    alert(error);
-    location.href = "/";
-  }
-});

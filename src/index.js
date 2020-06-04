@@ -12,17 +12,17 @@ const {
 } = require("./utils/messages");
 const port = process.env.PORT || 3000;
 const pulicDirectoryPath = path.join(__dirname, "../public");
+
 const {
   addUser,
   removeUser,
   getUser,
   getUserInRoom,
 } = require("./utils/users");
+
 app.use(express.static(pulicDirectoryPath));
 
 io.on("connection", (socket) => {
-  console.log("new websocket connenction");
-
   socket.on("join", (options, callback) => {
     const { error, user } = addUser({ id: socket.id, ...options });
 
